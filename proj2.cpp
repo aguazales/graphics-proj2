@@ -39,10 +39,10 @@ GLuint spike = 0;
 	GLdouble spike_height = 10.00; // cone height
 	GLuint spike_slices = 20; // the number of subdivisions *around* the z axis
 	GLuint spike_stacks = 20; // the number of subdivisions *along* the z axis
-	GLfloat spike_ambient[] = {0.105882, 0.058824, 0.113725, 1.0}; // ambient reflection
-	GLfloat spike_diffuse[] = {0.427451, 0.470588, 0.541176, 1.0}; // diffuse reflection
-	GLfloat spike_specular[] = {0.333333, 0.333333, 0.521569, 1.0}; // specular reflection
-	GLfloat spike_shine = 9.846150;
+	GLfloat spike_ambient[] = {0.1, 0.187250, 0.174500, 0.8}; // ambient reflection
+	GLfloat spike_diffuse[] = {0.396, 0.741510, 0.691020, 0.8}; // diffuse reflection
+	GLfloat spike_specular[] = {0.297254, 0.308290, 0.306678, 0.8}; // specular reflection
+	GLfloat spike_shine = 12.800000;
 
 GLuint end_cap = 0;
 	GLdouble end_cap_base = 4; // cone radius
@@ -70,11 +70,14 @@ GLUquadric* main_cylinder_quad = gluNewQuadric();
 
 // wheel that contains the cylinder and spokes
 GLuint wheel = 0;
-GLuint xrot=0, yrot=0, zrot=0; // used to rotate the object with the keyboard
-GLuint x_coord=25, y_coord=35;
+GLuint wheel_xrot=0, wheel_yrot=0, wheel_zrot=0; // used to rotate the wheel with the keyboard
+GLuint spike_xrot=0, spike_yrot=0; // used to rotate the middle spike with the keyboard
+GLuint wheel_x_coord=25, wheel_y_coord=35;
+GLuint spike_x_coord=25, spike_y_coord=27;
+GLuint obj = 0; // Sets which object is controlled by the keyboard; 0=wheel, 1=middle spike
 
 // animation variables
-GLuint frame_rate = 250;
+GLuint frame_rate = 10;
 bool pause = false;
 GLuint anim_time = 0;
 
@@ -98,7 +101,7 @@ void animate(int value)
 	if (!pause)
 	{
 		// rotate the wheel
-		zrot++;
+		wheel_zrot++;
 
 //		// move the wheel in an ellipse shape
 //		GLuint radius = 5; // radius of circle
@@ -112,15 +115,15 @@ void animate(int value)
 		//for(j)
 		float theta = anim_time * (M_PI/180.0f);
 
-		x_coord = 5+2*(sin(theta)+1)*10;
-		y_coord = 8+(cos(theta)+2)*10;
+		wheel_x_coord = 5+2*(sin(theta)+1)*10;
+		wheel_y_coord = 8+(cos(theta)+2)*10;
 
 		anim_time++;
 		// mark the window for refreshing
 		glutPostRedisplay();
 	}
 
-	glutTimerFunc(10, animate, anim_time);
+	glutTimerFunc(frame_rate, animate, anim_time);
 }
 
 
@@ -141,15 +144,17 @@ void display(void)
 	gluLookAt(25, 25, 5, 25, 25, 0, 0, 1, 0);
 
 	glPushMatrix();
-		glTranslatef(25, 27, -50);
-		//glRotatef(-90, 1, 0, 0);
+		glTranslatef(spike_x_coord, spike_y_coord, -50);
+		glRotatef(spike_xrot, 1, 0, 0);
+		glRotatef(spike_yrot, 0, 1, 0);
 		glCallList(spike);
 	glPopMatrix();
+
 	glPushMatrix();
-		glTranslatef(x_coord, y_coord, -50);
-		glRotatef(xrot, 1, 0, 0);
-		glRotatef(yrot, 0, 1, 0);
-		glRotatef(zrot, 0, 0, 1);
+		glTranslatef(wheel_x_coord, wheel_y_coord, -50);
+		glRotatef(wheel_xrot, 1, 0, 0);
+		glRotatef(wheel_yrot, 0, 1, 0);
+		glRotatef(wheel_zrot, 0, 0, 1);
 		glScalef(0.5, 0.5, 0.5);
 		glCallList(wheel);
 	glPopMatrix();
@@ -330,20 +335,36 @@ void fkeyCallback (int key, int x, int y)
 {
         switch (key) {
             case GLUT_KEY_UP: /* move the object positively along the y-axis */
-            	y_coord = y_coord+1;
+            	if (obj==0){
+            		wheel_y_coord = wheel_y_coord+1;
+            	} else {
+            		spike_y_coord = spike_y_coord+1;
+            	}
             	glutPostRedisplay();
             	break;
             case GLUT_KEY_DOWN: /* move the object negatively along the y-axis */
-            	y_coord = y_coord-1;
+            	if (obj==0){
+            		wheel_y_coord = wheel_y_coord-1;
+            	} else {
+            		spike_y_coord = spike_y_coord-1;
+            	}
             	glutPostRedisplay();
             	break;
-            case GLUT_KEY_LEFT: /* move the object positively along the x-axis */
-            	x_coord = x_coord-1;
+            case GLUT_KEY_LEFT: /* move the object negatively along the x-axis */
+            	if (obj==0){
+            		wheel_x_coord = wheel_x_coord-1;
+            	} else {
+            		spike_x_coord = spike_x_coord-1;
+            	}
             	glutPostRedisplay();
                 break;
 
             case GLUT_KEY_RIGHT: /* move the object negatively along the x-axis */
-            	x_coord = x_coord+1;
+            	if (obj==0){
+            		wheel_x_coord = wheel_x_coord+1;
+            	} else {
+            		spike_x_coord = spike_x_coord+1;
+            	}
             	glutPostRedisplay();
                 break;
 
@@ -373,27 +394,51 @@ void keyCallback (unsigned char key, int, int)
             else
                 glEnable(GL_LIGHT1);
             break;
-        case 's': /* rotate object around the x-axis */
-        	xrot=xrot+5;
-            if (xrot>360) xrot = 0;
-            glutPostRedisplay();
-            break;
-        case 'w': /* rotate object around the x-axis */
-            xrot=xrot-5;
-            if (xrot>360) xrot = 359;
-            glutPostRedisplay();
-            break;
-        case 'a': /* rotate object around the y-axis */
-            yrot=yrot-5;
-            if (yrot>360) yrot = 359;
-            glutPostRedisplay();
-            break;
 
+        case 's': /* rotate object around the x-axis */
+        	if (obj==0){
+        		wheel_xrot=wheel_xrot+5;
+        		if (wheel_xrot>360) wheel_xrot = 0;
+        	} else
+        	{
+        		spike_xrot=spike_xrot+5;
+        		if (spike_xrot>360) spike_xrot = 0;
+        	}
+        	glutPostRedisplay();
+        	break;
+        case 'w': /* rotate object around the x-axis */
+        	if (obj==0){
+        		wheel_xrot=wheel_xrot-5;
+        		if (wheel_xrot>360) wheel_xrot = 359;
+        	} else
+        	{
+        		spike_xrot=spike_xrot-5;
+        		if (spike_xrot>360) spike_xrot = 359;
+        	}
+        	glutPostRedisplay();
+        	break;
+        case 'a': /* rotate object around the y-axis */
+        	if (obj==0){
+        		wheel_yrot=wheel_yrot-5;
+        		if (wheel_yrot>360) wheel_yrot = 359;
+        	} else
+        	{
+        		spike_yrot=spike_yrot-5;
+        		if (spike_yrot>360) spike_yrot = 359;
+        	}
+        	glutPostRedisplay();
+        	break;
         case 'd': /* rotate object around the y-axis */
-            yrot=yrot+5;
-            if (yrot>360) yrot = 0;
-            glutPostRedisplay();
-            break;
+        	if (obj==0){
+        		wheel_yrot=wheel_yrot+5;
+        		if (wheel_yrot>360) wheel_yrot = 0;
+        	} else
+        	{
+        		spike_yrot=spike_yrot+5;
+        		if (spike_yrot>360) spike_yrot = 0;
+        	}
+        	glutPostRedisplay();
+        	break;
 
         case 'p': /* pause the animation */
             if (pause)
@@ -401,6 +446,12 @@ void keyCallback (unsigned char key, int, int)
             else
                 pause = true;
             break;
+        case 't': /* switch the object controlled by the keyboard */
+        	if (obj == 0) // if the keyboard currently controls the wheel
+        		obj = 1;
+        	else
+        		obj = 0;
+        	break;
     }
     glutPostRedisplay();
 }
