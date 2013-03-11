@@ -16,6 +16,7 @@
  *  1                     = enable/disable the directional green light source
  */
 
+ 
 #include	<stdlib.h>
 #include	<C:\MinGW\include\GL\freeglut.h>
 #include	<math.h>
